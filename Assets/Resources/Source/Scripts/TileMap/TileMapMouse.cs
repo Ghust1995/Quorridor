@@ -1,12 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System;
+using Logging;
 using UnityEngine.Networking;
 
-public class MapClickEventArgs : EventArgs
+public class MapCreateEventArgs : EventArgs
 {
-    public int PosX { get; set;}
-    public int PosZ { get; set; }
+    public Vector2 PlayerPos { get; set;}
+    public Vector2 WallPos { get; set; }
     public bool IsVertical { get; set; }
 }
 
@@ -15,9 +16,9 @@ public class MapClickEventArgs : EventArgs
 [RequireComponent(typeof(TileMap))]
 public class TileMapMouse : NetworkBehaviour {
 
-    public event EventHandler<MapClickEventArgs> MapClick;
+    public event EventHandler<MapCreateEventArgs> MapClick;
 
-    private void OnMapClick(MapClickEventArgs e)
+    private void OnMapClick(MapCreateEventArgs e)
     {
         if (MapClick != null)
         {
@@ -25,8 +26,9 @@ public class TileMapMouse : NetworkBehaviour {
         }
     }
 
-    MeshCollider _collider;
-    MeshRenderer _renderer;
+    private MeshCollider _collider;
+    private MeshRenderer _renderer;
+    private PlayerController _playerController;
 
     TileMap _tileMap;
 
@@ -34,8 +36,7 @@ public class TileMapMouse : NetworkBehaviour {
 
     private bool _isVertical = true;
 
-    private int _curPosX = 0;
-    private int _curPosZ = 0;
+    private Vector2 _curMousePos;
 
     void Start () {
         _collider = GetComponent<MeshCollider>();
@@ -43,7 +44,32 @@ public class TileMapMouse : NetworkBehaviour {
         _tileMap = GetComponent<TileMap>();
     }
 
-	void Update () {
+    public void RegisterLocalPlayer(PlayerController local)
+    {
+        LoggerSystem.Log("Initialized local player info on TileMap");
+        local.MouseClick += OnPlayerMouseClick;
+    }
+
+    private void OnPlayerMouseClick(object sender, MouseClickEventArgs e)
+    {
+        Ray ray = Camera.main.ScreenPointToRay(e.MousePos);
+        RaycastHit hitInfo;
+        if (_collider.Raycast(ray, out hitInfo, Mathf.Infinity))
+        {
+            var currentTilePoint = _tileMap.GlobalToMapCoords(hitInfo.point);
+            _selectionGraphic.localPosition = new Vector3(currentTilePoint.x, 0, currentTilePoint.y);
+            var wallPos = new Vector2((int)currentTilePoint.x, (int)currentTilePoint.y);
+
+            OnMapClick(new MapCreateEventArgs()
+            {
+                PlayerPos = _tileMap.GlobalToMapCoords(e.PlayerPos),
+                WallPos = wallPos,
+                IsVertical = _isVertical
+            });
+        }
+    }
+
+    void Update () {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hitInfo;
 
@@ -51,10 +77,9 @@ public class TileMapMouse : NetworkBehaviour {
         {
             var currentTilePoint = _tileMap.GlobalToMapCoords(hitInfo.point);
 
-            _selectionGraphic.localPosition = currentTilePoint;
+            _selectionGraphic.localPosition = new Vector3(currentTilePoint.x, 0, currentTilePoint.y);
 
-            _curPosX = (int)currentTilePoint.x;
-            _curPosZ = _tileMap.SizeZ - (int)currentTilePoint.z;
+            _curMousePos = new Vector2((int) currentTilePoint.x, _tileMap.SizeY - (int) currentTilePoint.y);
         }
 
         if(Input.GetMouseButtonDown(1))
@@ -66,16 +91,5 @@ public class TileMapMouse : NetworkBehaviour {
             }
             _isVertical = !_isVertical;
         }
-
-        if(Input.GetMouseButtonDown(0))
-        {            
-            OnMapClick(new MapClickEventArgs()
-            {
-                PosX = _curPosX,
-                PosZ = _tileMap.SizeZ - _curPosZ,
-                IsVertical = _isVertical
-            });
-        }
-
 	}
 }

@@ -3,6 +3,14 @@ using System.Collections;
 using GameData;
 using Logging;
 using UnityEngine.Networking;
+using System;
+using System.Collections.Generic;
+
+public class MouseClickEventArgs : EventArgs
+{
+    public Vector3 MousePos { get; set; }
+    public Vector3 PlayerPos { get; set; }
+}
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerController : NetworkBehaviour {
@@ -16,16 +24,34 @@ public class PlayerController : NetworkBehaviour {
 
     public char ID;
 
+    public event EventHandler<MouseClickEventArgs> MouseClick;
+    public event EventHandler RotateWall;
+    public void HandleMouseClick(MouseClickEventArgs e)
+    {
+        if(MouseClick != null)
+            MouseClick.Invoke(this, e);
+    }
+    public Func<bool> IsRotatingWall;
+
+    public void HandleRotateWall()
+    {
+        if (RotateWall != null)
+            RotateWall.Invoke(this, EventArgs.Empty);
+    }
+
+
     public override void OnStartLocalPlayer()
     {
         LoggerSystem.Log("New Player Connected");
         _rigidbody = GetComponent<Rigidbody>();
 
-        _tileMap = (TileMap)FindObjectOfType(typeof(TileMap));
+        _tileMap = FindObjectOfType<TileMap>();
         if (_tileMap == null)
         {
-            LoggerSystem.Log("Unable to Find TileMapMouse");
+            LoggerSystem.Log("Unable to Find TileMaps");
         }
+
+        FindObjectOfType<TileMapMouse>().RegisterLocalPlayer(this);
     }
 
 	public void MoveTowards(float x, float y)
@@ -39,8 +65,19 @@ public class PlayerController : NetworkBehaviour {
     {
         if (!isLocalPlayer)
             return;
-
         var loc_pos = _tileMap.GlobalToMapCoords(transform.position);
-        _tileMap.Map.UpdatePlayer((int)loc_pos.x, (int)loc_pos.z, ID);
+        _tileMap.Map.UpdatePlayer((int)loc_pos.x, (int)loc_pos.y, ID);
+        //foreach (var actionToEventPair in ActionsToEvents)
+        //{
+        //    if (actionToEventPair.Key.Invoke())
+        //    {
+        //        actionToEventPair.Value();
+        //    }
+        //}
+    }
+
+    private void OnPlayerClick()
+    {
+        
     }
 }

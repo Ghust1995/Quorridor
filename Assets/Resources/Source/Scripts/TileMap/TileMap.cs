@@ -18,10 +18,10 @@ public class TileMap : MonoBehaviour {
     }
 
     [SerializeField]
-    private int _sizeZ = 50;
-    public int SizeZ
+    private int _sizeY = 50;
+    public int SizeY
     {
-        get { return _sizeZ; }
+        get { return _sizeY; }
     }
 
     [SerializeField]
@@ -38,18 +38,18 @@ public class TileMap : MonoBehaviour {
         get { return _wallSize; }
     }
 
-    public Vector3 MaptoGlobalCoords(int x, int z)
+    public Vector3 MaptoGlobalCoords(int x, int y)
     {
-        var currentGlobalPoint = new Vector3(x * TileSize, 0, z * TileSize);
+        var currentGlobalPoint = new Vector3(x * TileSize, 0, y * TileSize);
         var hitPointGlobal = transform.TransformPoint(currentGlobalPoint);
 
         return hitPointGlobal;
     }
 
-    public Vector3 GlobalToMapCoords(Vector3 global)
+    public Vector2 GlobalToMapCoords(Vector3 global)
     {
         var hitPointLocal = transform.InverseTransformPoint(global);
-        var currentTilePoint = new Vector3(Mathf.FloorToInt(hitPointLocal.x / TileSize), 0, Mathf.FloorToInt(hitPointLocal.z / TileSize));
+        var currentTilePoint = new Vector2(Mathf.FloorToInt(hitPointLocal.x / TileSize), Mathf.FloorToInt(hitPointLocal.z / TileSize));
 
         return currentTilePoint;
     }
@@ -59,7 +59,7 @@ public class TileMap : MonoBehaviour {
 
     void Awake()
     {
-        Map = new GridMap(_sizeX, _sizeZ, _wallSize);
+        Map = new GridMap(_sizeX, _sizeY, _wallSize);
     }
     
     void Start()
@@ -76,12 +76,12 @@ public class TileMap : MonoBehaviour {
     // TODO: move to builder class
     public void BuildMesh()
     {
-        int numTiles = _sizeX * _sizeZ;
+        int numTiles = _sizeX * _sizeY;
         int numTriangles = numTiles * 2;
 
         var verticesSizeX = _sizeX + 1;
-        var verticesSizeZ = _sizeZ + 1;
-        int numVertices = verticesSizeX * verticesSizeZ;
+        var verticesSizeY = _sizeY + 1;
+        int numVertices = verticesSizeX * verticesSizeY;
 
         // Generate the mesh data
         var vertices = new Vector3[numVertices];
@@ -91,28 +91,28 @@ public class TileMap : MonoBehaviour {
 
         for (int x = 0; x < verticesSizeX; x++)
         {
-            for (int z = 0; z < verticesSizeZ; z++)
+            for (int y = 0; y < verticesSizeY; y++)
             {
-                var index = z * verticesSizeX + x;
-                vertices[index] = new Vector3(x * _tileSize, 0, z * _tileSize);
+                var index = y * verticesSizeX + x;
+                vertices[index] = new Vector3(x * _tileSize, 0, y * _tileSize);
                 normals[index] = Vector3.up; // Probably change later;
-                uv[index] = new Vector2((float)x / _sizeX, (float)z / _sizeZ);
+                uv[index] = new Vector2((float)x / _sizeX, (float)y / _sizeY);
             }
         }
 
         for (int x = 0; x < _sizeX; x++)
         {
-            for (int z = 0; z < _sizeZ; z++)
+            for (int y = 0; y < _sizeY; y++)
             {
-                int squareIndex = z * _sizeX + x;
+                int squareIndex = y * _sizeX + x;
                 int triIndex = squareIndex * 6;
-                triangles[triIndex + 0] = z * verticesSizeX + x +                 0;
-                triangles[triIndex + 1] = z * verticesSizeX + x + verticesSizeX + 0;
-                triangles[triIndex + 2] = z * verticesSizeX  + x + verticesSizeX + 1;
+                triangles[triIndex + 0] = y * verticesSizeX + x +                 0;
+                triangles[triIndex + 1] = y * verticesSizeX + x + verticesSizeX + 0;
+                triangles[triIndex + 2] = y * verticesSizeX  + x + verticesSizeX + 1;
 
-                triangles[triIndex + 3] = z * verticesSizeX + x +                 0;
-                triangles[triIndex + 4] = z * verticesSizeX + x + verticesSizeX + 1;
-                triangles[triIndex + 5] = z * verticesSizeX + x + 1; 
+                triangles[triIndex + 3] = y * verticesSizeX + x +                 0;
+                triangles[triIndex + 4] = y * verticesSizeX + x + verticesSizeX + 1;
+                triangles[triIndex + 5] = y * verticesSizeX + x + 1; 
             }
         }
 
@@ -136,7 +136,7 @@ public class TileMap : MonoBehaviour {
     public void BuildTexture()
     {
         var texWidth = _sizeX;
-        var texHeight = _sizeZ;
+        var texHeight = _sizeY;
         var texture = new Texture2D(texWidth, texHeight);
         for (int x = 0; x < texWidth; x++)
         {

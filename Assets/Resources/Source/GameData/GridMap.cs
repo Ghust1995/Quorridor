@@ -218,15 +218,15 @@ namespace GameData
             return ret;
         }
 
-        public void UpdatePlayer(int posX, int posZ, char player)
+        public void UpdatePlayer(int posX, int posY, char player)
         {
             Tuple<int, int> pos;
             if (_players.TryGetValue(player, out pos))
             {
                 _map[pos.Item1, pos.Item2] = EMPTY;
             }
-            _players[player] = new Tuple<int, int>(posX, posZ);
-            _map[posX, posZ] = player;
+            _players[player] = new Tuple<int, int>(posX, posY);
+            _map[posX, posY] = player;
         }
 
         public override string ToString()

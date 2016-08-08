@@ -5,7 +5,11 @@ using System.Text;
 
 namespace GameData
 {
-    class GlobalConstants
+    public static class GlobalConstants
     {
+        public static class Wall
+        {
+            public static readonly float Speed = 10;
+        }
     }
 }

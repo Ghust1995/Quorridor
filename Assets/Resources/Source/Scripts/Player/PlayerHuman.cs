@@ -14,5 +14,13 @@ public class PlayerHuman : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate () {
         playerController.MoveTowards(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"));
+	    if (Input.GetMouseButtonDown(0))
+	    {
+	        playerController.HandleMouseClick(new MouseClickEventArgs()
+	        {
+	            MousePos  = Input.mousePosition,
+                PlayerPos = transform.position
+	        });
+	    }
     }
 }
